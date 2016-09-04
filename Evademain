@@ -3,6 +3,16 @@
 
 local lastSpell
 
+local lastSpellDelay
+
+local lastSpellSpeed
+
+local lastSpellRange
+
+local lastSpellRadius
+
+
+
 local startVector
 
 local endVector
@@ -51,37 +61,50 @@ local objectList = {
 };	
 
 
+function evadeToPosition(directionInformation)
 
--- Name . Delay . Speed . Range . Radius
-function getSpellInformation(spellName)
-for i, skillShot in pairs(objectList) do
-if(skillShot.spellName:find(spellName)) then
-return {skillShot.spellName,skillShot.spellDelay,skillShot.projectileSpeed,skillShot.range,skillShot.radius}
+if(evade) then
+
+if(canEscapeFullHit(skillShotwillHitInWhichTime(lastSpellDelay,lastSpellDelay,getSkillShotFromHeroDistance()),directionInformation[3],myHero)) then
+							  
+oldPosition = {myHero.x,myHero.z}
+newPosition = {myHero.x + directionInformation[2].x,myHero.z + directionInformation[2].z}
+
+myHero:MoveTo(newPosition[1],newPosition[2])
+evade = false
 end
 end
 end
+
+ 
+
+
+
+-- Delay . Speed . Range . Radius
 
 
 function OnProcessSpell(unit, spell)
-
-
 
 for i, skillShot in pairs(objectList) do
 
 if spell.name == skillShot.spellName and unit ~= myHero then
 lastSpell = spell
+lastSpellDelay = skillShot.spellDelay
+lastSpellSpeed = skillShot.projectileSpeed
+lastSpellRange = skillShot.range
+lastSpellRadius = skillShot.radius
+
 
 startVector = Vector (spell.startPos.x,spell.startPos.y,spell.startPos.z)
 endVector = Vector(spell.endPos.x,spell.endPos.y,spell.endPos.z)
 
-points = getPointsFromRect(endVector.x,endVector.z,startVector.x,startVector.z,getSpellInformation(lastSpell.name)[5] * 2,getSpellInformation(lastSpell.name)[4])
+points = getPointsFromRect(endVector.x,endVector.z,startVector.x,startVector.z, lastSpellRadius * 2,lastSpellRange)
 
 p1 = points[1]
 p2 = points[2]
 p3 = points[3]
 p4 = points[4]
-
-
+return
 end
 end
 end
@@ -156,36 +179,20 @@ end
 
 
 
-function evadeToPosition(directionInformation)
-
-if(evade) then
-if(canEscapeFullHit(skillShotwillHitInWhichTime(getSpellInformation(lastSpell.name)[2],getSpellInformation(lastSpell.name)[3],getSkillShotFromHeroDistance())
-                              ,directionInformation[3],myHero)) then
-							  
-oldPosition = {myHero.x,myHero.z}
-newPosition = {myHero.x + directionInformation[2].x,myHero.z + directionInformation[2].z}
-
-myHero:MoveTo(newPosition[1],newPosition[2])
-evade = false
-end
-end
-end
-
- 
 
 function OnDraw()
    
    if(lastSpell ~= nil and lastSpell.startPos.x ~= nil ) then
   
    
-   DrawCircle(endVector.x,endVector.y, endVector.z,getSpellInformation(lastSpell.name)[5], ARGB(255,255,255,255))
-   DrawLineBorder3D(startVector.x,startVector.y,startVector.z,endVector.x,endVector.y,endVector.z,(getSpellInformation(lastSpell.name)[5]) * 2,ARGB(255,255,255,255),1)
+   DrawCircle(endVector.x,endVector.y, endVector.z,lastSpellRadius, ARGB(255,255,255,255))
+   DrawLineBorder3D(startVector.x,startVector.y,startVector.z,endVector.x,endVector.y,endVector.z,lastSpellRadius * 2,ARGB(255,255,255,255),1)
    DrawLine3D(p3[1],myHero.y,p3[2],p1[1],myHero.y,p1[2],3,ARGB(255,0,0,255))
    DrawLine3D(p4[1],myHero.y,p4[2],p2[1],myHero.y,p2[2],3,ARGB(255,255,0,255))
 
    if(ts.target ~= nil) then
       if(intersects()) then
-         --evadeToPosition(getEvadeDirectionVectorDistance())
+         evadeToPosition(getEvadeDirectionVectorDistance())
       else
       end
    end
