@@ -57,8 +57,13 @@ end
 local objectList = {
 ["Morgana"] = {spellName = "DarkBindingMissile", spellDelay = 250, projectileSpeed = 1200, range = 1300, radius = 80},
 ["Karma"] = {spellName = "KarmaQ", spellDelay = 250, projectileSpeed = 1700, range = 1050, radius = 90},
-["Blitzcrank"] = {spellName = "RocketGrab", spellDelay = 250, projectileSpeed = 1800, range = 1050, radius = 70}
+["Blitzcrank"] = {spellName = "RocketGrab", spellDelay = 250, projectileSpeed = 1800, range = 1050, radius = 70},
+["Ezrael"]{name = "MysticShot",spellDelay = 250, projectileSpeed = 2000, range = 1200,  radius = 80}
 };	
+
+
+
+
 
 
 function evadeToPosition(directionInformation)
