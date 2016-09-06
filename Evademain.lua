@@ -489,4 +489,4 @@ end
 
 function getHitBoxRadius(target)
      return GetDistance(target.minBBox, target.maxBBox)/2
-endd
+end
