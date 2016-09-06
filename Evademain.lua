@@ -194,6 +194,9 @@ end
 -- evtl statt + evade einfach umkehren mit - , nach oben checken
 function getDirectionToEvadeAndDistanceToEvadeAndVectorToEvadeLinear(unit,skillshot,skillshotStart,skillShotEnd)
 
+local l1 = skillshot.radius * 2
+local l2 = Vector(skillShotEnd.x - skillshotStart.x,skillShotEnd.y - skillshotStart.y,skillShotEnd.z - skillshotStart.z):len() + l1
+
 local points = getPointsFromRect(skillShotEnd.x,skillShotEnd.z,skillshotStart.x,skillshotStart.z,l1,l2)
  
 local leftBot = points[3]
@@ -241,7 +244,7 @@ function getDirectionToEvadeAndDistanceToEvadeAndVectorToEvadeCircular(unit,skil
 
 
 local l1 = skillshot.radius * 2
-local l2 = Vector(skillShotEnd.x - skillshotStart.x,skillShotEnd.y - skillshotStart.y,skillShotEnd.z - skillshotStart.z):len()
+local l2 = Vector(skillShotEnd.x - skillshotStart.x,skillShotEnd.y - skillshotStart.y,skillShotEnd.z - skillshotStart.z):len() + l1
 
 local points = getPointsFromRect(skillShotEnd.x,skillShotEnd.z,skillshotStart.x,skillshotStart.z,l1,l2)
  
@@ -313,7 +316,7 @@ end
 function hasToEvadeLinear(unit,skillshot,skllshotObject)
 
 local l1 = skillshot.radius * 2
-local l2 = Vector(skllshotObject.endPos.x - skllshotObject.startPos.x,skllshotObject.endPos.y - skllshotObject.startPos.y,skllshotObject.endPos.z - skllshotObject.startPos.z):len()
+local l2 = Vector(skllshotObject.endPos.x - skllshotObject.startPos.x,skllshotObject.endPos.y - skllshotObject.startPos.y,skllshotObject.endPos.z - skllshotObject.startPos.z):len() + l1
 
 local points = getPointsFromRect(skllshotObject.endPos.x,skllshotObject.endPos.z,skllshotObject.startPos.x,skllshotObject.startPos.z,l1,l2)
  
@@ -333,11 +336,9 @@ end
 
 function hasToEvadeCircular(unit,skillshot,skillshotObject)
 
-     local unitHitBoxSize = getHitBoxRadius(unit)
-
      local skillShotRadius = skillshot.radius
 
-     if(circleCircleIntersect(unit.x,unit.z,unitHitBoxSize,skillshotObject.endPos.x,skillshotObject.endPos.z,skillShotRadius)) then
+     if(circleCircleIntersect(unit.x,unit.z,getHitBoxRadius(unit),skillshotObject.endPos.x,skillshotObject.endPos.z,skillShotRadius)) then
          
 		 return true
 		 
