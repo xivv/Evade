@@ -2,13 +2,51 @@
 
 -- They are all linear
 local objectList = {
-["Morgana"] = {spellName = "DarkBindingMissile", spellDelay = 250, projectileSpeed = 1200, range = 1300, radius = 80, type = linear},
+["Morgana"] = {spellName = "DarkBindingMissile", spellDelay = 250, projectileSpeed = 1200, range = 1300, radius = 80, type = "linear"},
 ["Karma"] = {spellName = "KarmaQ", spellDelay = 250, projectileSpeed = 1700, range = 1050, radius = 90, type = linear},
-["Blitzcrank"] = {spellName = "RocketGrab", spellDelay = 250, projectileSpeed = 1800, range = 1050, radius = 70, type = linear},
-["Ezrael"]{name = "MysticShot",spellDelay = 250, projectileSpeed = 2000, range = 1200,  radius = 80, type = linear}
+["Blitzcrank"] = {spellName = "RocketGrab", spellDelay = 250, projectileSpeed = 1800, range = 1050, radius = 70, type = "linear"},
+["Ezrael"]{name = "MysticShot",spellDelay = 250, projectileSpeed = 2000, range = 1200,  radius = 80, type = "linear"}
 };	
 
 local dodgeList = {};
+
+
+function OnTick()
+
+-- If our dodgeList is not empty
+if( getArrayLength(dodgeList) >= 1) then
+
+-- We iterate trough our dodgelist
+for i, spell in pairs(dodgeList) do 
+
+-- We only want to handle linear for now
+if(spell.spellinformation.type = "linear") then
+
+-- We create all the information that we need
+local isLinearSkillshotCollidingObject = isLinearSkillshotColliding(spell)
+local shortestWayObject = shortestWay(isLinearSkillshotCollidingObject)
+local canEvade = canEvadeInTime(shortestWayObject)
+local evadePoint
+
+-- If canEvade is true we start the evading process by moving our hero to the destinated point
+-- else we do nothing and let our hero get hit, but we logg it to the console 
+   if(canEvade) then
+   
+     evadePoint = getEvadePoint(shortestWayObject,1.1)
+
+	 myHero:MoveTo(evadePoint)
+	 
+     PrintChat("Can evade in time " .. spell.spellinformation.name)
+
+     else
+
+     PrintChat("Can't evade in time " .. spell.spellinformation.name)
+
+     end
+end
+end
+end
+end
 
 function OnProcessSpell(unit,spell)
 
@@ -34,7 +72,7 @@ end
 function isLinearSkillshotColliding(spell)
 
 -- This method only works if our heroes hitbox is smaller than the radius of the spell
-if (getHitBoxRadius(myHero)*2 < spell.spellinformation.radius) then return end
+if (getHitBoxRadius(myHero)*2 <= spell.spellinformation.radius) then return end
 
 -- We get the Hitbox from our formular with the endPos, startPos, width and height
 local hitboxPoints = getPointsFromRect(spell.spell.endPos.x,
@@ -73,7 +111,7 @@ if ((collisionPoint = checkLineCollisionPoint(leftBottom[1],
 											  leftTop[2],
 											  myHero.x,myHero.y,getHitBoxRadius(myHero))) ~= nil) then 
 
-											  return {true,"left",collisionPoint,leftEdgeVector,middleVector,rightEdgeVector,spell}
+											  return {true,"left",collisionPoint,leftEdgeVector,middleVector,rightEdgeVector,hitboxPoints,spell}
 
 end
 
@@ -83,7 +121,7 @@ if ((collisionPoint = checkLineCollisionPoint(rightBottom[1],
 											  rightTop[2],
 											  myHero.x,myHero.y,getHitBoxRadius(myHero))) ~= nil) then 
 											  
-											  return {true,"right",collisionPoint,leftEdgeVector,middleVector,rightEdgeVector,spell}
+											  return {true,"right",collisionPoint,leftEdgeVector,middleVector,rightEdgeVector,hitboxPoints,spell}
 
 end
 
@@ -93,7 +131,7 @@ if ((collisionPoint = checkLineCollisionPoint(spell.spell.startPos.x,
 											  spell.spell.endPos.z,
 											  myHero.x,myHero.y,getHitBoxRadius(myHero))) ~= nil) then 
 
-											  return {true,"middle",collisionPoint,leftEdgeVector,middleVector,rightEdgeVector,spell}
+											  return {true,"middle",collisionPoint,leftEdgeVector,middleVector,rightEdgeVector,hitboxPoints,spell}
 
 end
 
@@ -101,16 +139,106 @@ return {false,"nil",nil,nil,spell}
 
 end
 
-function shortestWay(evadeObject)
+-- We calculate which way is faster
+function shortestWay(lineSkillShotCollidingObject)
 
+local hitboxPoints = lineSkillShotCollidingObject[7]
 
+local leftBottom = hitboxPoints[3]
+local rightBottom = hitboxPoints[4]
+local leftTop = hitboxPoints[1]
+local rightTop = hitboxPoints[2]
 
+local leftDistance = pointLineDistancePerformance(leftBottom[1],
+                                 leftBottom[2],
+								 leftTop[1],
+								 leftTop[2],
+								 myHero.x,myHero.z)
+								 
+local rightDistance = pointLineDistancePerformance(rightBottom[1],
+                                 rightBottom[2],
+								 rightTop[1],
+								 rightTop[2],
+								 myHero.x,myHero.z)
 
+if ( leftDistance <= rightDistance) then
+
+return {"left",leftDistance,lineSkillShotCollidingObject}
+
+else
+
+return {"right",rightDistance,lineSkillShotCollidingObject}
+end
 
 end
 
+-- We now are getting the Point we want to move our hero to and add a percentage so we move a bit further
+-- example extra = 1.1 
+function getEvadePoint(shortestWayObject,extra)
+
+local distanceToMove = getHitBoxRadius(myHero) - shortestWayObject[2]
+local lineSkillShotCollidingObject = shortestWayObject[3]
+local collisionPoint = lineSkillShotCollidingObject[3]
+
+local directionVector = Vector(myHero.x - collisionPoint[1],myHero.y,myHero.z - collisionPoint[2])
+
+local lenghtendVector = directionVector:normalized() * ( distanceToMove * extra )
+
+return myHero.pos + lenghtendVector
+
+end
+
+function canEvadeInTime(shortestWayObject)
+
+local distanceToMove = getHitBoxRadius(myHero) - shortestWayObject[2]
+local lineSkillShotCollidingObject = shortestWayObject[3]
+local collisionPoint = lineSkillShotCollidingObject[3]
+local hitboxPoints = lineSkillShotCollidingObject[7]
+local spellinformation = lineSkillShotCollidingObject[8].spellinformation
+local spellPoint
+local distanceFromSkillShot
+
+local edge = shortestWayObject[1]
+
+if (edge == "left" then)
+spellPoint = hitboxPoints[3]
+else
+spellPoint = hitboxPoints[4]
+end
+
+-- Distance between two points
+distanceFromSkillShot = sqrt((collisionPoint[1] - spellPoint[1])^2 + (collisionPoint[2] - spellPoint[2])^2)
+
+return distanceFromSkillShot / spellinformation.projectileSpeed >= distanceToMove / myHero.ms
+
+end
+
+
 function getHitBoxRadius(target)
     return GetDistance(target.minBBox, target.maxBBox)/2
+end
+
+-- sqrt and ^2 can be heavy calculations wasting time when we only need to compare
+function pointLineDistancePerformance(startx,starty,endx,endy,pointx,pointy)
+
+local cn = { pointx - startx, pointy - starty}
+local bn = { endx - startx, endx - starty}
+
+local angle = math.atan2(bn[2],bn[1]) - math.atan2(cn[2],cn[1])
+local abLength = math.sqrt(bn[1] * bn[1] + bn[2] * bn[2])
+
+return math.sin(angle)*abLength
+end
+
+function pointLineDistance(startx,starty,endx,endy,pointx,pointy)
+
+local cn = { pointx - startx, pointy - starty}
+local bn = { endx - startx, endx - starty}
+
+local angle = math.atan2(bn[2],bn[1]) - math.atan2(cn[2],cn[1])
+local abLength = math.sqrt(bn[1] * bn[1] + bn[2] * bn[2])
+
+return math.sqrt((math.sin(angle)*abLength)^2)
 end
 
 
